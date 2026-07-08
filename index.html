@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checklist Pré-Uso — Usina Solar</title>
+  <style>
+    :root {
+      --verde:   #1a7a3c;
+      --verde2:  #22a050;
+      --vermelho:#dc2626;
+      --amarelo: #f59e0b;
+      --cinza:   #6b7280;
+      --cinza-bg:#f3f4f6;
+      --azul:    #1e3a5f;
+      --sombra:  0 2px 12px rgba(0,0,0,.10);
+      --radius:  14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--cinza-bg); min-height:100vh; color:#1f2937; }
+
+    /* HEADER */
+    header {
+      background:var(--verde); color:#fff; padding:12px 20px 10px;
+      text-align:center; box-shadow:var(--sombra); position:sticky; top:0; z-index:100;
+    }
+    .header-logo { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:4px; }
+    .header-logo-text { font-size:1.35rem; font-weight:800; letter-spacing:1px; color:#fff; }
+    header h1 { font-size:1rem; font-weight:600; opacity:.92; }
+    header p  { font-size:.75rem; opacity:.78; margin-top:1px; }
+    .back-btn {
+      position:absolute; left:14px; top:50%; transform:translateY(-50%);
+      background:rgba(255,255,255,.18); border:none; color:#fff;
+      border-radius:8px; padding:6px 12px; font-size:.9rem; cursor:pointer; display:none;
+    }
+    .back-btn.visible { display:block; }
+
+    /* LAYOUT */
+    .screen { display:none; padding:20px 16px 100px; max-width:600px; margin:0 auto; }
+    .screen.active { display:block; }
+
+    /* TELA 1 — SELEÇÃO */
+    .welcome-icon { font-size:3rem; text-align:center; margin:28px 0 8px; }
+    .welcome-title { text-align:center; font-size:1.4rem; font-weight:700; color:var(--verde); margin-bottom:6px; }
+    .welcome-sub   { text-align:center; color:var(--cinza); font-size:.9rem; margin-bottom:24px; }
+    .equip-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .equip-card {
+      background:#fff; border-radius:var(--radius); box-shadow:var(--sombra);
+      padding:14px 10px 12px; text-align:center; cursor:pointer; border:2px solid transparent;
+      transition:border-color .2s,transform .15s; overflow:hidden;
+    }
+    .equip-card:hover  { border-color:var(--verde2); transform:translateY(-2px); }
+    .equip-card:active { transform:scale(.97); }
+    .equip-card-body { display:flex; flex-direction:column; align-items:center; gap:8px; min-height:88px; justify-content:flex-end; }
+    .equip-card-body svg { max-width:76px; max-height:76px; width:auto; height:auto; }
+    .equip-card-body .name { font-size:.82rem; font-weight:700; color:#1f2937; line-height:1.25; }
+
+    /* TELA 2 — IDENTIFICAÇÃO */
+    .section-title { font-size:1.1rem; font-weight:700; color:var(--verde); margin-bottom:16px; }
+    .card { background:#fff; border-radius:var(--radius); box-shadow:var(--sombra); padding:20px; margin-bottom:16px; }
+    label { font-size:.85rem; font-weight:600; color:#374151; display:block; margin-bottom:4px; }
+    input, textarea, select {
+      width:100%; padding:10px 12px; border:1.5px solid #d1d5db;
+      border-radius:8px; font-size:.95rem; color:#1f2937; background:#fff;
+      outline:none; transition:border-color .2s;
+    }
+    input:focus, textarea:focus { border-color:var(--verde2); }
+    input.error, textarea.error { border-color:var(--vermelho); }
+    .field-row { margin-bottom:14px; }
+    .field-row:last-child { margin-bottom:0; }
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+    /* TELA 3 — CHECKLIST */
+    .legend {
+      display:flex; flex-wrap:wrap; gap:8px;
+      margin-bottom:16px; padding:12px 14px;
+      background:#fff; border-radius:10px; box-shadow:var(--sombra);
+    }
+    .legend span { font-size:.75rem; }
+    .item-card {
+      background:#fff; border-radius:var(--radius); box-shadow:var(--sombra);
+      padding:16px; margin-bottom:12px; border-left:4px solid #e5e7eb; transition:border-color .2s;
+    }
+    .item-card.conforme     { border-color:var(--verde2); }
+    .item-card.nao-conforme { border-color:var(--vermelho); }
+    .item-card.observacao   { border-color:var(--amarelo); }
+    .item-card.na           { border-color:var(--cinza); }
+    .item-num  { font-size:.7rem; font-weight:700; color:var(--cinza); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+    .item-text { font-size:.93rem; font-weight:500; margin-bottom:12px; line-height:1.45; }
+    .btn-group { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+    .opt-btn {
+      border:2px solid #e5e7eb; background:#f9fafb; border-radius:8px;
+      padding:8px 4px; font-size:.8rem; font-weight:600; cursor:pointer; transition:all .18s; text-align:center; line-height:1.3;
+    }
+    .opt-btn.sel-conforme     { background:#dcfce7; border-color:var(--verde2); color:#166534; }
+    .opt-btn.sel-nao-conforme { background:#fee2e2; border-color:var(--vermelho); color:#991b1b; }
+    .opt-btn.sel-observacao   { background:#fef3c7; border-color:var(--amarelo); color:#92400e; }
+    .opt-btn.sel-na           { background:#f3f4f6; border-color:#9ca3af; color:#374151; }
+
+    /* CAMPO OBS + FOTO */
+    .obs-field { margin-top:10px; display:none; }
+    .obs-field.visible { display:block; }
+    .obs-field textarea { font-size:.85rem; resize:vertical; min-height:64px; }
+    .obs-required-label { font-size:.75rem; color:var(--vermelho); font-weight:600; margin-bottom:4px; display:block; }
+
+    /* UPLOAD DE FOTO */
+    .foto-area { margin-top:10px; }
+    .foto-label-btn {
+      display:inline-flex; align-items:center; gap:6px;
+      background:#f0fdf4; border:1.5px dashed var(--verde2); border-radius:8px;
+      padding:8px 14px; font-size:.83rem; font-weight:600; color:var(--verde);
+      cursor:pointer; transition:background .2s;
+    }
+    .foto-label-btn:hover { background:#dcfce7; }
+    input[type="file"] { display:none; }
+    .fotos-preview { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+    .foto-thumb {
+      position:relative; width:72px; height:72px;
+      border-radius:8px; overflow:hidden; border:1.5px solid #d1fae5;
+    }
+    .foto-thumb img { width:100%; height:100%; object-fit:cover; }
+    .foto-thumb .del-foto {
+      position:absolute; top:2px; right:2px; background:rgba(220,38,38,.85);
+      color:#fff; border:none; border-radius:50%; width:20px; height:20px;
+      font-size:.7rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    }
+
+    /* PROGRESSO */
+    .progress-bar-wrap { background:#e5e7eb; border-radius:999px; height:6px; margin-bottom:18px; }
+    .progress-bar-fill { background:var(--verde2); height:100%; border-radius:999px; transition:width .35s ease; }
+    .progress-label    { font-size:.78rem; color:var(--cinza); margin-bottom:6px; }
+
+    /* BOTÃO SUBMIT */
+    .btn-submit {
+      width:100%; padding:16px; border:none; border-radius:var(--radius);
+      background:var(--verde); color:#fff; font-size:1rem; font-weight:700;
+      cursor:pointer; margin-top:20px; box-shadow:0 4px 14px rgba(26,122,60,.35);
+      transition:background .2s,transform .15s;
+    }
+    .btn-submit:hover   { background:var(--verde2); }
+    .btn-submit:active  { transform:scale(.98); }
+    .btn-submit:disabled { background:#9ca3af; cursor:not-allowed; transform:none; box-shadow:none; }
+
+    /* TELA REPROVADO */
+    .reprovado-wrap { text-align:center; padding-top:40px; }
+    .reprovado-ico { font-size:4rem; margin-bottom:16px; }
+    .reprovado-box {
+      background:#fef2f2; border:2px solid #fca5a5; border-radius:var(--radius);
+      padding:22px 20px; margin:0 0 24px;
+    }
+    .reprovado-box h2 { font-size:1.15rem; font-weight:800; color:#991b1b; margin-bottom:12px; line-height:1.3; }
+    .reprovado-box p  { font-size:.93rem; color:#7f1d1d; line-height:1.65; }
+    .btn-reprovado {
+      width:100%; padding:15px; border:none; border-radius:var(--radius);
+      background:var(--vermelho); color:#fff; font-size:1rem; font-weight:700;
+      cursor:pointer; box-shadow:0 4px 14px rgba(220,38,38,.3);
+    }
+
+    /* TELA SUCESSO */
+    .success-wrap { text-align:center; padding-top:60px; }
+    .success-wrap .ico { font-size:4rem; margin-bottom:16px; }
+    .success-wrap h2 { font-size:1.4rem; font-weight:700; color:var(--verde); margin-bottom:8px; }
+    .success-wrap p  { color:var(--cinza); font-size:.9rem; line-height:1.6; margin-bottom:28px; }
+    .btn-novo { padding:14px 32px; border:none; border-radius:var(--radius); background:var(--verde); color:#fff; font-size:.95rem; font-weight:700; cursor:pointer; box-shadow:var(--sombra); }
+
+    /* OBS GERAL */
+    .obs-geral { margin-top:4px; }
+    .obs-geral textarea { min-height:80px; resize:vertical; }
+
+    /* TOAST */
+    .toast {
+      position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+      background:#1f2937; color:#fff; padding:12px 22px; border-radius:10px;
+      font-size:.88rem; z-index:999; opacity:0; transition:opacity .3s;
+      pointer-events:none; max-width:320px; text-align:center;
+    }
+    .toast.show { opacity:1; }
+
+    @media (max-width:380px) {
+      .equip-grid { grid-template-columns:1fr; }
+      .btn-group { grid-template-columns:repeat(2,1fr); }
+      .two-col { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <button class="back-btn" id="backBtn" onclick="goBack()">← Voltar</button>
+  <div class="header-logo">
+    <span class="header-logo-text">BRASOL</span>
+  </div>
+  <h1 id="headerTitle">Checklist Pré-Uso · Usina Solar</h1>
+  <p id="headerSub">Inspeção de Ferramentas</p>
+</header>
+
+<!-- TELA 1: Seleção -->
+<div class="screen active" id="screen-home">
+  <div class="welcome-icon">🔧</div>
+  <div class="welcome-title">Selecione o Equipamento</div>
+  <div class="welcome-sub">Escolha a ferramenta que será inspecionada antes do uso</div>
+  <div class="equip-grid" id="equipGrid"></div>
+</div>
+
+<!-- TELA 2: Identificação -->
+<div class="screen" id="screen-ident">
+  <div class="section-title">👤 Identificação</div>
+  <div class="card">
+    <div class="field-row">
+      <label for="usina">Usina / Local *</label>
+      <input type="text" id="usina" placeholder="Ex: Usina Solar Norte — Bloco A" />
+    </div>
+    <div class="two-col">
+      <div class="field-row">
+        <label for="mesAno">Mês/Ano *</label>
+        <input type="month" id="mesAno" />
+      </div>
+      <div class="field-row">
+        <label for="dia">Dia *</label>
+        <input type="number" id="dia" min="1" max="31" placeholder="Ex: 15" />
+      </div>
+    </div>
+    <div class="field-row" style="margin-bottom:0">
+      <label for="responsavel">Responsável *</label>
+      <input type="text" id="responsavel" placeholder="Nome completo" />
+    </div>
+  </div>
+  <button class="btn-submit" onclick="goToChecklist()">Iniciar Checklist →</button>
+</div>
+
+<!-- TELA 3: Checklist -->
+<div class="screen" id="screen-check">
+  <div class="progress-label" id="progressLabel">0 de 5 itens respondidos</div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+  </div>
+  <div class="legend">
+    <span>✅ Conforme</span>&nbsp;
+    <span>❌ Não Conforme</span>&nbsp;
+    <span>⚠️ Observação</span>&nbsp;
+    <span>N/A Não Aplicável</span>
+  </div>
+  <div id="itemsContainer"></div>
+  <div class="card obs-geral">
+    <div class="field-row" style="margin-bottom:0">
+      <label for="obsGeral">📝 Observações Gerais do Mês</label>
+      <textarea id="obsGeral" placeholder="Descreva qualquer observação geral..."></textarea>
+    </div>
+  </div>
+  <button class="btn-submit" id="btnSubmit" onclick="submitChecklist()" disabled>
+    Enviar Checklist ✓
+  </button>
+</div>
+
+<!-- TELA 4: Reprovado -->
+<div class="screen" id="screen-reprovado">
+  <div class="reprovado-wrap">
+    <div class="reprovado-ico">🚫</div>
+    <div class="reprovado-box">
+      <h2>⚠️ Atenção! Não conformidades identificadas no checklist de pré-uso.</h2>
+      <p>A ferramenta está <strong>reprovada para utilização</strong>.<br><br>
+      Procure seu <strong>líder para avaliação e liberação</strong> antes de iniciar a atividade.</p>
+    </div>
+    <button class="btn-reprovado" onclick="resetApp()">Entendido — Novo Checklist</button>
+  </div>
+</div>
+
+<!-- TELA 5: Sucesso -->
+<div class="screen" id="screen-ok">
+  <div class="success-wrap">
+    <div class="ico">✅</div>
+    <h2>Checklist Aprovado!</h2>
+    <p id="successMsg">Ferramenta em conformidade e liberada para uso.<br>Dados registrados no Google Sheets.</p>
+    <button class="btn-novo" onclick="resetApp()">Novo Checklist</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  URL DO APPS SCRIPT
+// ══════════════════════════════════════════════════
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw4crzv8nrAzZr4KOBq146Lfw7Q8sFo_TfRD_Wn4jbgi_d6WDyP_HDatM7PVdiqiUqk9g/exec";
+// ══════════════════════════════════════════════════
+
+// ── SVG ICONS (estilo ilustração, fiel à imagem de referência) ──
+const ICONS = {
+
+  /* MULTÍMETRO — corpo amarelo, topo preto, display LCD verde, dial central, ponteiras P/V */
+  multimetro: `<svg viewBox="0 0 90 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- sombra/corpo amarelo -->
+    <rect x="12" y="6" width="66" height="88" rx="10" fill="#E8B000" stroke="#C89000" stroke-width="1.5"/>
+    <rect x="12" y="6" width="66" height="88" rx="10" fill="#F5C518"/>
+    <!-- faixa topo preta -->
+    <rect x="12" y="6" width="66" height="22" rx="10" fill="#222"/>
+    <rect x="12" y="18" width="66" height="10" fill="#222"/>
+    <!-- display LCD -->
+    <rect x="18" y="24" width="54" height="26" rx="5" fill="#9DC88D" stroke="#6a9b5e" stroke-width="1.2"/>
+    <rect x="20" y="26" width="50" height="22" rx="4" fill="#b8d9a6"/>
+    <text x="45" y="41" text-anchor="middle" fill="#111" font-size="14" font-family="'Courier New',monospace" font-weight="bold" letter-spacing="2">000</text>
+    <!-- etiquetas laterais no corpo -->
+    <line x1="18" y1="56" x2="72" y2="56" stroke="#D4A017" stroke-width="0.8" stroke-dasharray="3,4"/>
+    <!-- dial rotativo grande -->
+    <circle cx="45" cy="72" r="17" fill="#111" stroke="#333" stroke-width="1.5"/>
+    <circle cx="45" cy="72" r="13" fill="#1e1e1e"/>
+    <!-- marcações de faixa no dial -->
+    <path d="M45 72 L45 59" stroke="#F5C518" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="45" cy="59" r="2.5" fill="#F5C518"/>
+    <!-- pontos de escala -->
+    <circle cx="32" cy="72" r="2" fill="#555"/>
+    <circle cx="58" cy="72" r="2" fill="#555"/>
+    <circle cx="45" cy="85" r="2" fill="#555"/>
+    <!-- 3 jacks de entrada -->
+    <rect x="22" y="92" width="46" height="0" rx="0"/>
+    <circle cx="30" cy="94" r="5" fill="#111" stroke="#666" stroke-width="1"/>
+    <circle cx="45" cy="94" r="5" fill="#111" stroke="#666" stroke-width="1"/>
+    <circle cx="60" cy="94" r="5" fill="#cc0000" stroke="#990000" stroke-width="1"/>
+    <circle cx="30" cy="94" r="2.5" fill="#333"/>
+    <circle cx="45" cy="94" r="2.5" fill="#333"/>
+    <circle cx="60" cy="94" r="2.5" fill="#cc0000"/>
+    <!-- ponteira preta -->
+    <line x1="30" y1="99" x2="24" y2="116" stroke="#1a1a1a" stroke-width="3.5" stroke-linecap="round"/>
+    <rect x="22" y="114" width="4" height="6" rx="1" fill="#1a1a1a"/>
+    <!-- ponteira vermelha -->
+    <line x1="60" y1="99" x2="66" y2="116" stroke="#cc0000" stroke-width="3.5" stroke-linecap="round"/>
+    <rect x="64" y="114" width="4" height="6" rx="1" fill="#cc0000"/>
+  </svg>`,
+
+  /* ALICATE AMPERÍMETRO — garra/clamp amarela em D no topo, corpo preto, display LCD */
+  amperimetro: `<svg viewBox="0 0 80 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- garra externa amarela (D shape) -->
+    <path d="M28 8 Q28 2 40 2 Q54 2 56 14 Q58 26 56 38 Q54 48 40 48 Q28 48 28 42 Z" fill="#F5C518" stroke="#D4A017" stroke-width="2"/>
+    <!-- interior vazio da garra -->
+    <path d="M34 10 Q34 7 40 7 Q50 7 51 16 Q52 26 51 36 Q50 43 40 43 Q34 43 34 40 Z" fill="#fff" stroke="#D4A017" stroke-width="1"/>
+    <!-- jaw/abertura -->
+    <path d="M28 28 L34 28" stroke="#D4A017" stroke-width="2" stroke-linecap="round"/>
+    <!-- corpo principal preto -->
+    <rect x="16" y="44" width="48" height="64" rx="8" fill="#252525" stroke="#111" stroke-width="1.5"/>
+    <!-- highlight lateral -->
+    <rect x="16" y="44" width="6" height="64" rx="4" fill="#383838"/>
+    <!-- display LCD -->
+    <rect x="22" y="50" width="36" height="22" rx="4" fill="#9DC88D" stroke="#6a9b5e" stroke-width="1"/>
+    <rect x="23" y="51" width="34" height="20" rx="3" fill="#b8d9a6"/>
+    <text x="40" y="65" text-anchor="middle" fill="#111" font-size="12" font-family="'Courier New',monospace" font-weight="bold" letter-spacing="2">000</text>
+    <!-- dial/seletor -->
+    <circle cx="40" cy="86" r="10" fill="#111" stroke="#444" stroke-width="1.5"/>
+    <circle cx="40" cy="86" r="7" fill="#1e1e1e"/>
+    <line x1="40" y1="86" x2="40" y2="79" stroke="#F5C518" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- jacks -->
+    <circle cx="30" cy="102" r="4" fill="#111" stroke="#555" stroke-width="1"/>
+    <circle cx="40" cy="102" r="4" fill="#111" stroke="#555" stroke-width="1"/>
+    <circle cx="50" cy="102" r="4" fill="#cc0000" stroke="#990000" stroke-width="1"/>
+    <circle cx="30" cy="102" r="2" fill="#333"/>
+    <circle cx="40" cy="102" r="2" fill="#333"/>
+  </svg>`,
+
+  /* CHAVE TORQUÍMETRO — longa, cabo preto espesso à esquerda, haste prateada, cabeça ratchet à direita */
+  torquimetro: `<svg viewBox="0 0 130 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- cabo punho preto (esquerda) -->
+    <rect x="2" y="12" width="28" height="26" rx="8" fill="#2a2a2a" stroke="#111" stroke-width="1.5"/>
+    <!-- textura grip -->
+    <line x1="8" y1="14" x2="8" y2="36" stroke="#444" stroke-width="1" stroke-dasharray="2,3"/>
+    <line x1="14" y1="14" x2="14" y2="36" stroke="#444" stroke-width="1" stroke-dasharray="2,3"/>
+    <line x1="20" y1="14" x2="20" y2="36" stroke="#444" stroke-width="1" stroke-dasharray="2,3"/>
+    <!-- transição cabo→haste -->
+    <rect x="28" y="20" width="6" height="10" rx="2" fill="#111"/>
+    <!-- haste cromada principal -->
+    <rect x="34" y="22" width="70" height="6" rx="3" fill="#d0d0d0" stroke="#aaa" stroke-width="1"/>
+    <!-- highlight superior haste -->
+    <rect x="34" y="22" width="70" height="2" rx="1" fill="#efefef" opacity="0.7"/>
+    <!-- marcações de escala -->
+    <line x1="50" y1="21" x2="50" y2="19" stroke="#888" stroke-width="1.2"/>
+    <line x1="65" y1="21" x2="65" y2="19" stroke="#888" stroke-width="1.2"/>
+    <line x1="80" y1="21" x2="80" y2="19" stroke="#888" stroke-width="1.2"/>
+    <line x1="95" y1="21" x2="95" y2="19" stroke="#888" stroke-width="1.2"/>
+    <line x1="57" y1="22" x2="57" y2="20" stroke="#bbb" stroke-width="0.8"/>
+    <line x1="72" y1="22" x2="72" y2="20" stroke="#bbb" stroke-width="0.8"/>
+    <line x1="87" y1="22" x2="87" y2="20" stroke="#bbb" stroke-width="0.8"/>
+    <!-- cabeçote ratchet (direita) -->
+    <rect x="104" y="10" width="24" height="30" rx="6" fill="#2a2a2a" stroke="#111" stroke-width="1.5"/>
+    <!-- drive quadrado -->
+    <rect x="108" y="18" width="16" height="14" rx="3" fill="#555" stroke="#333" stroke-width="1"/>
+    <rect x="112" y="22" width="8" height="6" rx="1.5" fill="#888"/>
+    <!-- botão reverso -->
+    <circle cx="116" cy="8" r="4" fill="#444" stroke="#333" stroke-width="1"/>
+  </svg>`,
+
+  /* ALICATE CRIMPADOR MC4 — cabos azuis longos, cabeça mecânica preta no topo */
+  crimpador: `<svg viewBox="0 0 70 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- cabeça/mandíbulas pretas -->
+    <path d="M20 4 L22 36 L35 36 L35 4 Z" fill="#222" stroke="#111" stroke-width="1.2"/>
+    <path d="M50 4 L48 36 L35 36 L35 4 Z" fill="#333" stroke="#111" stroke-width="1.2"/>
+    <!-- dentes/matrizes da cabeça -->
+    <rect x="23" y="8" width="10" height="24" rx="2" fill="#444" stroke="#222" stroke-width="1"/>
+    <rect x="37" y="8" width="10" height="24" rx="2" fill="#555" stroke="#333" stroke-width="1"/>
+    <!-- detalhes de crimpagem -->
+    <rect x="25" y="12" width="6" height="4" rx="1" fill="#666"/>
+    <rect x="25" y="18" width="6" height="4" rx="1" fill="#666"/>
+    <rect x="25" y="24" width="6" height="4" rx="1" fill="#666"/>
+    <rect x="39" y="12" width="6" height="4" rx="1" fill="#777"/>
+    <rect x="39" y="18" width="6" height="4" rx="1" fill="#777"/>
+    <rect x="39" y="24" width="6" height="4" rx="1" fill="#777"/>
+    <!-- pivô central -->
+    <circle cx="35" cy="38" r="5" fill="#555" stroke="#333" stroke-width="1.5"/>
+    <circle cx="35" cy="38" r="2.5" fill="#888"/>
+    <!-- braços intermediários -->
+    <path d="M22 36 L16 60 L20 60 L26 38" fill="#333" stroke="#222" stroke-width="1"/>
+    <path d="M48 36 L54 60 L50 60 L44 38" fill="#444" stroke="#333" stroke-width="1"/>
+    <!-- cabos azuis longos -->
+    <rect x="8" y="58" width="22" height="56" rx="8" fill="#1a5ec4" stroke="#1548a0" stroke-width="1.5"/>
+    <rect x="40" y="58" width="22" height="56" rx="8" fill="#1a5ec4" stroke="#1548a0" stroke-width="1.5"/>
+    <!-- highlight nos cabos -->
+    <rect x="10" y="60" width="4" height="52" rx="2" fill="#2f6fd4" opacity="0.6"/>
+    <rect x="42" y="60" width="4" height="52" rx="2" fill="#2f6fd4" opacity="0.6"/>
+    <!-- rebites -->
+    <circle cx="19" cy="74" r="4" fill="#1548a0" stroke="#0f3882" stroke-width="1"/>
+    <circle cx="51" cy="74" r="4" fill="#1548a0" stroke="#0f3882" stroke-width="1"/>
+    <circle cx="19" cy="74" r="2" fill="#2260cc"/>
+    <circle cx="51" cy="74" r="2" fill="#2260cc"/>
+  </svg>`,
+
+  /* FURADEIRA (corded) — horizontal, amarela/preta, cabo lateral, broca, fio */
+  furadeira: `<svg viewBox="0 0 130 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- broca -->
+    <polygon points="2,32 18,30 18,34" fill="#bbb" stroke="#999" stroke-width="1"/>
+    <rect x="18" y="30" width="4" height="4" rx="1" fill="#888"/>
+    <!-- chuck/mandril preto -->
+    <rect x="22" y="26" width="16" height="12" rx="4" fill="#222" stroke="#111" stroke-width="1.5"/>
+    <line x1="26" y1="27" x2="26" y2="37" stroke="#444" stroke-width="1"/>
+    <line x1="30" y1="27" x2="30" y2="37" stroke="#444" stroke-width="1"/>
+    <line x1="34" y1="27" x2="34" y2="37" stroke="#444" stroke-width="1"/>
+    <!-- corpo principal amarelo -->
+    <rect x="38" y="18" width="52" height="28" rx="8" fill="#F5C518" stroke="#D4A017" stroke-width="2"/>
+    <!-- faixa preta superior -->
+    <rect x="38" y="18" width="52" height="9" rx="8" fill="#222"/>
+    <rect x="38" y="23" width="52" height="4" fill="#222"/>
+    <!-- ventilação lateral -->
+    <line x1="74" y1="22" x2="74" y2="44" stroke="#D4A017" stroke-width="1.2" stroke-dasharray="3,2"/>
+    <line x1="80" y1="22" x2="80" y2="44" stroke="#D4A017" stroke-width="1.2" stroke-dasharray="3,2"/>
+    <!-- parte traseira preta/motor -->
+    <rect x="88" y="20" width="20" height="24" rx="6" fill="#222" stroke="#111" stroke-width="1.5"/>
+    <!-- ventilação motor -->
+    <line x1="92" y1="24" x2="92" y2="40" stroke="#444" stroke-width="1.2"/>
+    <line x1="96" y1="24" x2="96" y2="40" stroke="#444" stroke-width="1.2"/>
+    <line x1="100" y1="24" x2="100" y2="40" stroke="#444" stroke-width="1.2"/>
+    <line x1="104" y1="24" x2="104" y2="40" stroke="#444" stroke-width="1.2"/>
+    <!-- punho/cabo inferior -->
+    <path d="M50 46 Q48 58 50 72 L68 72 Q70 58 68 46 Z" fill="#F5C518" stroke="#D4A017" stroke-width="1.5"/>
+    <!-- base punho preta -->
+    <rect x="50" y="68" width="18" height="8" rx="4" fill="#222" stroke="#111" stroke-width="1"/>
+    <!-- gatilho -->
+    <rect x="56" y="52" width="6" height="10" rx="2" fill="#D4A017" stroke="#C48A00" stroke-width="1"/>
+    <!-- cabo auxiliar lateral -->
+    <rect x="38" y="46" width="10" height="22" rx="4" fill="#222" stroke="#111" stroke-width="1.5"/>
+    <!-- fio elétrico -->
+    <path d="M108 32 Q122 32 126 40 Q130 48 122 58 Q118 64 116 72" stroke="#222" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`,
+
+  /* PARAFUSADEIRA (cordless) — amarela/preta, vertical ~45°, bateria 20V na base */
+  furadeira_parafusadeira: `<svg viewBox="0 0 90 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- broca/bit -->
+    <polygon points="4,26 20,24 20,28" fill="#bbb" stroke="#999" stroke-width="1"/>
+    <!-- chuck/mandril -->
+    <rect x="20" y="22" width="14" height="10" rx="3" fill="#222" stroke="#111" stroke-width="1.5"/>
+    <!-- corpo principal amarelo -->
+    <rect x="34" y="14" width="44" height="26" rx="8" fill="#F5C518" stroke="#D4A017" stroke-width="2"/>
+    <!-- faixa preta topo -->
+    <rect x="34" y="14" width="44" height="10" rx="8" fill="#222"/>
+    <rect x="34" y="20" width="44" height="4" fill="#222"/>
+    <!-- ventilação -->
+    <line x1="60" y1="20" x2="60" y2="38" stroke="#D4A017" stroke-width="1.2" stroke-dasharray="2,2"/>
+    <line x1="66" y1="20" x2="66" y2="38" stroke="#D4A017" stroke-width="1.2" stroke-dasharray="2,2"/>
+    <!-- cabeça/motor traseiro preto -->
+    <rect x="74" y="16" width="14" height="22" rx="5" fill="#222" stroke="#111" stroke-width="1.5"/>
+    <!-- punho central -->
+    <path d="M46 40 Q44 52 46 64 L62 64 Q64 52 62 40 Z" fill="#F5C518" stroke="#D4A017" stroke-width="1.5"/>
+    <!-- gatilho -->
+    <rect x="52" y="46" width="5" height="10" rx="2" fill="#D4A017" stroke="#C48A00" stroke-width="1"/>
+    <!-- base punho -->
+    <rect x="44" y="60" width="20" height="6" rx="3" fill="#222" stroke="#111" stroke-width="1"/>
+    <!-- bateria amarela/preta 20V -->
+    <rect x="38" y="66" width="32" height="20" rx="6" fill="#F5C518" stroke="#D4A017" stroke-width="2"/>
+    <rect x="38" y="66" width="32" height="9" rx="6" fill="#222"/>
+    <rect x="38" y="71" width="32" height="4" fill="#222"/>
+    <!-- texto 20V -->
+    <text x="54" y="82" text-anchor="middle" fill="#111" font-size="7" font-family="Arial,sans-serif" font-weight="bold">20V</text>
+    <!-- contatos bateria -->
+    <rect x="44" y="86" width="6" height="4" rx="1" fill="#555"/>
+    <rect x="58" y="86" width="6" height="4" rx="1" fill="#555"/>
+  </svg>`,
+
+  /* LIXADEIRA ANGULAR — corpo azul, protetor cinza, disco laranja/cobre */
+  lixadeira: `<svg viewBox="0 0 110 85" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- cabo traseiro preto -->
+    <rect x="76" y="24" width="32" height="16" rx="6" fill="#222" stroke="#111" stroke-width="1.5"/>
+    <!-- grip cabo -->
+    <line x1="82" y1="25" x2="82" y2="39" stroke="#444" stroke-width="1" stroke-dasharray="2,2"/>
+    <line x1="88" y1="25" x2="88" y2="39" stroke="#444" stroke-width="1" stroke-dasharray="2,2"/>
+    <line x1="94" y1="25" x2="94" y2="39" stroke="#444" stroke-width="1" stroke-dasharray="2,2"/>
+    <!-- alça superior azul -->
+    <rect x="26" y="10" width="30" height="10" rx="5" fill="#1a55c0" stroke="#1040a0" stroke-width="1.5"/>
+    <!-- corpo motor azul principal -->
+    <rect x="10" y="16" width="68" height="30" rx="9" fill="#1e66d4" stroke="#1548a0" stroke-width="2"/>
+    <!-- highlight corpo -->
+    <rect x="12" y="17" width="64" height="8" rx="7" fill="#2f7af0" opacity="0.5"/>
+    <!-- botão/switch -->
+    <rect x="36" y="20" width="10" height="6" rx="3" fill="#cc0000" stroke="#990000" stroke-width="1"/>
+    <!-- carcaça engrenagem branca/cinza -->
+    <rect x="10" y="38" width="50" height="18" rx="6" fill="#e8eaed" stroke="#bcc0c8" stroke-width="1.5"/>
+    <!-- eixo/spindle -->
+    <circle cx="35" cy="56" r="5" fill="#888" stroke="#666" stroke-width="1"/>
+    <circle cx="35" cy="56" r="2.5" fill="#aaa"/>
+    <!-- protetor semicircular preto -->
+    <path d="M12 56 Q12 74 35 74 Q58 74 58 56 Z" fill="#2d2d2d" stroke="#111" stroke-width="1.5"/>
+    <!-- disco abrasivo laranja/cobre -->
+    <ellipse cx="35" cy="74" rx="22" ry="8" fill="#c0470a" stroke="#a03a08" stroke-width="1.5"/>
+    <ellipse cx="35" cy="72" rx="22" ry="6" fill="#e05a10"/>
+    <ellipse cx="35" cy="71" rx="14" ry="4" fill="#d04808" opacity="0.6"/>
+    <circle cx="35" cy="71" r="3.5" fill="#2d2d2d"/>
+    <!-- cabo lateral preto -->
+    <rect x="4" y="38" width="10" height="18" rx="4" fill="#222" stroke="#111" stroke-width="1.5"/>
+  </svg>`,
+
+  /* ROÇADEIRA — motor laranja topo, haste longa prateada, guidão T, cabeçote laranja */
+  rocadeira: `<svg viewBox="0 0 70 125" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- motor/carcaça laranja no topo -->
+    <rect x="16" y="2" width="38" height="26" rx="9" fill="#e8520a" stroke="#c44008" stroke-width="2"/>
+    <!-- detalhe motor: grade -->
+    <rect x="20" y="6" width="30" height="14" rx="4" fill="#c44008"/>
+    <line x1="26" y1="6" x2="26" y2="20" stroke="#e8520a" stroke-width="1.5"/>
+    <line x1="32" y1="6" x2="32" y2="20" stroke="#e8520a" stroke-width="1.5"/>
+    <line x1="38" y1="6" x2="38" y2="20" stroke="#e8520a" stroke-width="1.5"/>
+    <line x1="44" y1="6" x2="44" y2="20" stroke="#e8520a" stroke-width="1.5"/>
+    <!-- botão laranja/ignição -->
+    <circle cx="35" cy="0" r="0"/>
+    <!-- tampa do filtro laranja -->
+    <rect x="48" y="4" width="10" height="18" rx="4" fill="#f06010" stroke="#c44008" stroke-width="1"/>
+    <!-- haste prateada -->
+    <rect x="32" y="28" width="6" height="60" rx="3" fill="#c0c0c0" stroke="#9a9a9a" stroke-width="1.2"/>
+    <!-- highlight haste -->
+    <rect x="32" y="28" width="2" height="60" rx="1" fill="#e8e8e8" opacity="0.7"/>
+    <!-- guidão T horizontal (punho) -->
+    <rect x="6" y="60" width="24" height="8" rx="4" fill="#6b7280" stroke="#4b5563" stroke-width="1.5"/>
+    <rect x="40" y="60" width="24" height="8" rx="4" fill="#6b7280" stroke="#4b5563" stroke-width="1.5"/>
+    <!-- punho de borracha preto -->
+    <rect x="6" y="61" width="6" height="6" rx="3" fill="#222"/>
+    <rect x="58" y="61" width="6" height="6" rx="3" fill="#222"/>
+    <!-- conector haste/cabeçote -->
+    <rect x="29" y="88" width="12" height="8" rx="3" fill="#888" stroke="#666" stroke-width="1"/>
+    <!-- protetor cabeçote preto -->
+    <path d="M18 98 Q14 98 14 106 Q14 116 35 116 Q56 116 56 106 Q56 98 52 98 Z" fill="#2d2d2d" stroke="#111" stroke-width="1.5"/>
+    <!-- cabeçote laranja roçadeira -->
+    <circle cx="35" cy="106" r="9" fill="#e8520a" stroke="#c44008" stroke-width="1.5"/>
+    <circle cx="35" cy="106" r="5" fill="#c44008"/>
+    <!-- fios de corte laranja -->
+    <line x1="26" y1="114" x2="16" y2="122" stroke="#e8520a" stroke-width="3" stroke-linecap="round"/>
+    <line x1="44" y1="114" x2="54" y2="122" stroke="#e8520a" stroke-width="3" stroke-linecap="round"/>
+  </svg>`
+};
+
+// ── DADOS DOS EQUIPAMENTOS ─────────────────────────
+const EQUIPAMENTOS = [
+  { id:"multimetro",      nome:"Multímetro Digital",     ico:"multimetro",   num:"1",
+    itens:["Ponteiras isoladas sem danos, cortes ou exposição de fio?","Display legível e sem falhas de segmento?","Bateria com carga suficiente (indicador OK)?","Seletor de função girando corretamente em todas as posições?","Fusível interno dentro da validade e especificação correta?"] },
+  { id:"alicate_amperimetro", nome:"Alicate Amperímetro",ico:"amperimetro",  num:"2",
+    itens:["Garra de medição abre e fecha sem folgas ou desgaste visível?","Isolação do cabo e corpo sem trincas ou abrasões?","Bateria com indicação de carga adequada?","Zero correto antes da medição (função ZERO ativada)?","Categoria de tensão compatível com o serviço (CAT III/IV)?"] },
+  { id:"torquimetro",     nome:"Chave Torquímetro",      ico:"torquimetro",  num:"3",
+    itens:["Escala ajustada para o torque especificado no procedimento?","Mecanismo de clique/estouro funcionando corretamente?","Encaixe quadrado sem desgaste ou folga excessiva?","Dentro do prazo de calibração (certificado disponível)?","Armazenado na posição mínima da escala após uso anterior?"] },
+  { id:"alicate_mc4",     nome:"Alicate Crimpador MC4",  ico:"crimpador",    num:"4",
+    itens:["Matrizes de crimpagem sem desgaste, lascas ou deformações?","Mecanismo de travamento libera corretamente após a crimpagem?","Cabo de acionamento sem dobras ou rupturas?","Compatível com o tipo e bitola do conector MC4 a utilizar?","Teste de crimpagem em amostra antes do serviço produtivo?"] },
+  { id:"furadeira",       nome:"Furadeira / Parafusadeira", ico:"furadeira",  num:"5",
+    itens:["Bateria com carga suficiente para a jornada de trabalho?","Mandril trava a broca/bit sem folga e gira sem vibração excessiva?","Seletor de rotação/torque funciona em todas as posições?","Proteção da empunhadura íntegra (sem trincas ou partes soltas)?","Broca/bit adequado para o material e diâmetro do serviço?"] },
+  { id:"lixadeira",       nome:"Lixadeira Angular",      ico:"lixadeira",    num:"6",
+    itens:["Protetor do disco fixo e sem deformações?","Disco adequado ao material (metal/inox) e dentro da validade?","Porca de fixação do disco apertada com chave de pino correta?","Gatilho de acionamento e trava de segurança funcionando?","Cabos e plugue sem danos; carcaça sem trincas ou folgas?"] },
+  { id:"rocadeira",       nome:"Roçadeira",              ico:"rocadeira",    num:"7",
+    itens:["Protetor do disco/lâmina fixo e sem deformações?","Nível de combustível/carga de bateria adequado?","Filtro de ar limpo e sem obstruções?","Cabo e punho sem folgas; tirante/cinto ajustado corretamente?","Disco/fio de corte em bom estado, sem trincas ou desgaste excessivo?"] }
+];
